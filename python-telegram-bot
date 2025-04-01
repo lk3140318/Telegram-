@@ -1,0 +1,146 @@
+# backend_app.py (Example using Flask and python-telegram-bot)
+import os
+import requests
+from flask import Flask, request, jsonify
+from telegram import Bot
+from telegram.error import TelegramError
+from urllib.parse import urlparse
+import logging
+from functools import wraps # For API key check
+
+# --- Configuration ---
+# Load from environment variables for security!
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "YOUR_BOT_TOKEN")
+# This should match ADMIN_SECRET_KEY in your JS
+EXPECTED_ADMIN_SECRET = os.environ.get("ADMIN_SECRET_KEY", "YOUR_SUPER_SECRET_KEY_OR_TOKEN")
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Initialize Flask app and Telegram Bot
+app = Flask(__name__)
+bot = Bot(token=TELEGRAM_BOT_TOKEN)
+
+# --- Security Decorator ---
+def require_admin_secret(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            logging.warning("Missing or invalid Authorization header")
+            return jsonify({"success": False, "error": "Unauthorized: Missing or invalid Authorization header"}), 401
+
+        provided_secret = auth_header.split(' ')[1]
+        if provided_secret != EXPECTED_ADMIN_SECRET:
+            logging.warning("Incorrect admin secret provided")
+            return jsonify({"success": False, "error": "Unauthorized: Invalid secret"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+# --- Helper Functions ---
+def is_url_publicly_accessible(url):
+    """ Basic check if a URL seems accessible. More robust checks might be needed. """
+    try:
+        # Use HEAD request to avoid downloading full content initially
+        response = requests.head(url, timeout=5, allow_redirects=True)
+        # Consider status code and content type
+        return response.status_code == 200 and 'image' in response.headers.get('Content-Type', '').lower()
+    except requests.RequestException as e:
+        logging.info(f"URL HEAD request failed for {url}: {e}")
+        # Fallback: Try a GET request with streaming if HEAD fails
+        try:
+            response = requests.get(url, timeout=5, stream=True)
+            is_accessible = response.status_code == 200 and 'image' in response.headers.get('Content-Type', '').lower()
+            response.close() # Close the connection
+            return is_accessible
+        except requests.RequestException as e:
+             logging.error(f"URL GET request failed for {url}: {e}")
+             return False
+
+
+def download_image(url):
+    """ Downloads image content if needed. Returns bytes or None. """
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status() # Raise exception for bad status codes
+        if 'image' in response.headers.get('Content-Type', '').lower():
+            return response.content
+        else:
+            logging.warning(f"URL {url} did not return an image content type.")
+            return None
+    except requests.RequestException as e:
+        logging.error(f"Failed to download image from {url}: {e}")
+        return None
+
+# --- API Endpoint ---
+@app.route('/api/post_to_telegram', methods=['POST'])
+@require_admin_secret # Apply security check
+def post_to_telegram():
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "error": "Invalid JSON payload"}), 400
+
+    chat_id = data.get('chat_id')
+    image_url = data.get('image_url')
+    caption = data.get('caption', '') # Optional caption
+
+    if not chat_id or not image_url:
+        return jsonify({"success": False, "error": "Missing chat_id or image_url"}), 400
+
+    logging.info(f"Received request to post image: {image_url} to chat: {chat_id}")
+    posted_image_url = image_url # Default to original URL
+
+    try:
+        # Check accessibility (optional but recommended)
+        if not is_url_publicly_accessible(image_url):
+            logging.info(f"Image URL {image_url} seems not publicly accessible or is not an image. Attempting download.")
+            image_content = download_image(image_url)
+            if image_content:
+                logging.info(f"Sending downloaded image content to chat {chat_id}")
+                # Send downloaded image bytes
+                # Note: send_photo with bytes doesn't return a usable URL easily
+                bot.send_photo(
+                    chat_id=chat_id,
+                    photo=image_content,
+                    caption=caption,
+                    parse_mode='HTML' # Or 'MarkdownV2' - Use this for formatting links in caption
+                )
+                posted_image_url = "[Downloaded Image]" # Indicate it was uploaded
+            else:
+                 logging.error(f"Failed to download image or content was invalid: {image_url}")
+                 return jsonify({"success": False, "error": "Image could not be downloaded or was invalid"}), 400
+        else:
+            logging.info(f"Sending image URL directly to chat {chat_id}")
+            # Send using the public URL
+            bot.send_photo(
+                chat_id=chat_id,
+                photo=image_url,
+                caption=caption,
+                parse_mode='HTML' # Or 'MarkdownV2'
+            )
+
+        logging.info(f"Successfully posted to chat {chat_id}")
+        # Return success and the URL that was effectively posted
+        return jsonify({
+            "success": True,
+            "message": "Image posted successfully.",
+            "postedImageUrl": posted_image_url
+        }), 200
+
+    except TelegramError as e:
+        logging.error(f"Telegram API error for chat {chat_id}: {e}")
+        return jsonify({"success": False, "error": f"Telegram API error: {e}"}), 500
+    except Exception as e:
+        logging.exception(f"An unexpected error occurred while posting to {chat_id}") # Log full traceback
+        return jsonify({"success": False, "error": f"An unexpected server error occurred: {e}"}), 500
+
+# Add a simple root route for testing if the server is running
+@app.route('/')
+def index():
+    return "Telegram Admin Panel Backend is running."
+
+# --- Run the App (Example for local development) ---
+if __name__ == '__main__':
+    # Use environment variable for port if available (for Heroku etc.)
+    port = int(os.environ.get('PORT', 5000))
+    # For production, use a proper WSGI server like Gunicorn
+    app.run(host='0.0.0.0', port=port, debug=False) # Turn Debug OFF for production
