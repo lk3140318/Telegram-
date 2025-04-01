@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> </head>
+<body>
+    <div class="admin-panel-container">
+        <!-- Left Sidebar: Channels & Groups -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <button class="menu-btn"><i class="fas fa-bars"></i></button>
+                <input type="text" id="search-chats" placeholder="Search channels/groups...">
+            </div>
+            <div class="chat-list" id="chat-list">
+                <!-- Chat items will be loaded here by JS -->
+                <!-- Example Structure (replace with dynamic loading):
+                <div class="chat-item active" data-chat-id="-1001234567890" data-chat-type="channel" data-chat-name="My Awesome Channel">
+                    <img src="default-profile.png" alt="P" class="profile-pic">
+                    <div class="chat-info">
+                        <span class="chat-name">My Awesome Channel</span>
+                        <span class="last-message-time">10:30 PM</span>
+                        <span class="last-message-preview">Photo: Click here for info...</span>
+                    </div>
+                </div>
+                 <div class="chat-item" data-chat-id="-1009876543210" data-chat-type="group" data-chat-name="My Cool Group">
+                    <img src="default-profile.png" alt="P" class="profile-pic">
+                    <div class="chat-info">
+                        <span class="chat-name">My Cool Group</span>
+                         <span class="last-message-time">Yesterday</span>
+                       <span class="last-message-preview">You: Check this out!</span>
+                    </div>
+                </div>
+                -->
+            </div>
+             <button class="new-chat-btn" title="Manage Chats (Backend Feature)">+</button>
+        </div>
+
+        <!-- Right Content Area: Chat View & Posting -->
+        <div class="content-area">
+            <div class="chat-header" id="chat-header">
+                <!-- Selected chat info appears here -->
+                <div class="chat-title-section">
+                    <img src="default-profile.png" alt="P" class="profile-pic" id="header-profile-pic">
+                    <div class="chat-header-info">
+                        <span id="header-chat-name">Select a chat</span>
+                        <span id="header-chat-status"></span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                     <button id="search-content-btn" title="Search Content"><i class="fas fa-search"></i></button>
+                    <!-- Add other icons if needed -->
+                </div>
+            </div>
+
+            <div class="message-list" id="message-list">
+                <!-- Messages will be loaded/displayed here -->
+                 <div class="message-placeholder">Select a channel or group to view posts or create a new one.</div>
+            </div>
+
+            <!-- Posting Area -->
+            <div class="message-input-area">
+                <div class="input-wrapper">
+                     <textarea id="image-url-input" placeholder="Paste Image URL from Telegram here..."></textarea>
+                     <textarea id="caption-input" placeholder="Add caption, #hashtags, https://links..."></textarea>
+                     <div class="formatting-options">
+                         <!-- Add buttons for Bold, Italic, Link formatting later if needed -->
+                         <!-- <button title="Add Text Overlay (Backend Feature)">Add Text to Image</button> -->
+                         <!-- <button title="Add Clickable URL (Backend Feature)">Add URL to Image</button> -->
+                     </div>
+                </div>
+                <button id="send-button" title="Post to Telegram">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+
+             <!-- Search Content Overlay -->
+            <div id="search-content-overlay" class="search-content-overlay">
+                <input type="text" id="search-content-input" placeholder="Search messages in this chat...">
+                <button id="close-search-content">Close</button>
+                <div id="search-content-results"></div>
+            </div>
+        </div>
+    </div>
+
+     <!-- Simple Log Overlay -->
+    <div id="log-overlay" class="log-overlay">
+        <h3>Post Log <button id="close-log-btn">X</button></h3>
+        <div id="log-content">
+            <!-- Log entries will be added here -->
+        </div>
+    </div>
+    <button id="show-log-btn" title="Show Post Log"><i class="fas fa-history"></i></button>
+
+
+    <script src="script.js"></script>
+</body>
+</html>
