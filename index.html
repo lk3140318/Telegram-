@@ -1,100 +1,142 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Admin Panel</title>
+    <title>गेटअप पेजेस - एडमिन पैनल</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> </head>
-<body>
-    <div class="admin-panel-container">
-        <!-- Left Sidebar: Channels & Groups -->
-        <div class="sidebar">
+    <!-- Font Awesome for Icons (Optional) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
+</head>
+<body class="light-mode"> <!-- Default light mode -->
+
+    <div class="platform-container">
+
+        <!-- Sidebar (चैट लिस्ट) -->
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <button class="menu-btn"><i class="fas fa-bars"></i></button>
-                <input type="text" id="search-chats" placeholder="Search channels/groups...">
+                <div class="admin-profile">
+                    <img src="images/admin-avatar.png" alt="एडमिन" class="profile-pic small">
+                    <span>एडमिन</span>
+                </div>
+                <button id="theme-toggle-btn" title="थीम बदलें"><i class="fas fa-moon"></i></button>
             </div>
-            <div class="chat-list" id="chat-list">
-                <!-- Chat items will be loaded here by JS -->
-                <!-- Example Structure (replace with dynamic loading):
-                <div class="chat-item active" data-chat-id="-1001234567890" data-chat-type="channel" data-chat-name="My Awesome Channel">
-                    <img src="default-profile.png" alt="P" class="profile-pic">
-                    <div class="chat-info">
-                        <span class="chat-name">My Awesome Channel</span>
-                        <span class="last-message-time">10:30 PM</span>
-                        <span class="last-message-preview">Photo: Click here for info...</span>
+
+            <div class="global-search-container">
+                <input type="search" id="global-search-input" placeholder="चैनल या ग्रुप खोजें...">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+
+            <div class="filter-container">
+                <button class="filter-btn active" data-filter="all">सभी</button>
+                <button class="filter-btn" data-filter="channels">चैनल्स</button>
+                <button class="filter-btn" data-filter="groups">ग्रुप्स</button>
+                <!-- More filters like "Recently Created", "Most Active" need backend logic -->
+            </div>
+
+            <div class="chat-list-container">
+                <ul id="chat-list">
+                    <!-- चैट आइटम्स यहाँ JS द्वारा लोड होंगे -->
+                    <li class="loading-placeholder">चैट्स लोड हो रहे हैं...</li>
+                </ul>
+            </div>
+
+            <button id="new-chat-btn" class="new-chat-button" title="नया चैनल/ग्रुप बनाएं">
+                <i class="fas fa-plus"></i> नया बनाएं
+            </button>
+        </aside>
+
+        <!-- Main Content Area (चैट व्यू) -->
+        <main class="main-content">
+            <div id="default-view" class="default-view">
+                <i class="fas fa-comments default-icon"></i>
+                <p>शुरू करने के लिए कोई चैट चुनें या नया बनाएं।</p>
+            </div>
+
+            <div id="chat-view" class="chat-view hidden">
+                <header class="chat-header">
+                    <div class="chat-info-main">
+                        <img id="chat-header-pic" src="images/placeholder-profile.png" alt="प्रोफ़ाइल" class="profile-pic">
+                        <div class="chat-details">
+                            <h2 id="chat-header-name">चैट का नाम</h2>
+                            <span id="chat-header-status">चैनल</span>
+                        </div>
                     </div>
-                </div>
-                 <div class="chat-item" data-chat-id="-1009876543210" data-chat-type="group" data-chat-name="My Cool Group">
-                    <img src="default-profile.png" alt="P" class="profile-pic">
-                    <div class="chat-info">
-                        <span class="chat-name">My Cool Group</span>
-                         <span class="last-message-time">Yesterday</span>
-                       <span class="last-message-preview">You: Check this out!</span>
+                    <div class="chat-actions">
+                        <button id="chat-search-btn" title="इस चैट में खोजें"><i class="fas fa-search"></i></button>
+                        <button id="pin-list-btn" title="पिन किए गए संदेश (Placeholder)"><i class="fas fa-thumbtack"></i></button>
+                        <button id="more-options-btn" title="अधिक विकल्प (Placeholder)"><i class="fas fa-ellipsis-v"></i></button>
                     </div>
-                </div>
-                -->
-            </div>
-             <button class="new-chat-btn" title="Manage Chats (Backend Feature)">+</button>
-        </div>
-
-        <!-- Right Content Area: Chat View & Posting -->
-        <div class="content-area">
-            <div class="chat-header" id="chat-header">
-                <!-- Selected chat info appears here -->
-                <div class="chat-title-section">
-                    <img src="default-profile.png" alt="P" class="profile-pic" id="header-profile-pic">
-                    <div class="chat-header-info">
-                        <span id="header-chat-name">Select a chat</span>
-                        <span id="header-chat-status"></span>
+                     <div class="chat-search-bar hidden">
+                        <input type="search" id="in-chat-search-input" placeholder="संदेश खोजें...">
+                        <button id="close-chat-search-btn"><i class="fas fa-times"></i></button>
                     </div>
-                </div>
-                <div class="header-actions">
-                     <button id="search-content-btn" title="Search Content"><i class="fas fa-search"></i></button>
-                    <!-- Add other icons if needed -->
-                </div>
-            </div>
+                </header>
 
-            <div class="message-list" id="message-list">
-                <!-- Messages will be loaded/displayed here -->
-                 <div class="message-placeholder">Select a channel or group to view posts or create a new one.</div>
-            </div>
-
-            <!-- Posting Area -->
-            <div class="message-input-area">
-                <div class="input-wrapper">
-                     <textarea id="image-url-input" placeholder="Paste Image URL from Telegram here..."></textarea>
-                     <textarea id="caption-input" placeholder="Add caption, #hashtags, https://links..."></textarea>
-                     <div class="formatting-options">
-                         <!-- Add buttons for Bold, Italic, Link formatting later if needed -->
-                         <!-- <button title="Add Text Overlay (Backend Feature)">Add Text to Image</button> -->
-                         <!-- <button title="Add Clickable URL (Backend Feature)">Add URL to Image</button> -->
-                     </div>
+                <div class="message-list-container">
+                    <div id="pinned-message-placeholder" class="pinned-message hidden">
+                        <i class="fas fa-thumbtack pin-icon"></i>
+                        <span id="pinned-message-text">पिन किया गया संदेश यहाँ दिखेगा...</span>
+                    </div>
+                    <ul id="message-list">
+                        <!-- संदेश यहाँ JS द्वारा लोड होंगे -->
+                    </ul>
                 </div>
-                <button id="send-button" title="Post to Telegram">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
 
-             <!-- Search Content Overlay -->
-            <div id="search-content-overlay" class="search-content-overlay">
-                <input type="text" id="search-content-input" placeholder="Search messages in this chat...">
-                <button id="close-search-content">Close</button>
-                <div id="search-content-results"></div>
+                <footer class="message-input-area">
+                    <div id="image-preview-area" class="image-preview-area hidden">
+                        <img id="image-preview" src="#" alt="प्रीव्यू"/>
+                        <button id="remove-image-btn">×</button>
+                    </div>
+                    <button id="attach-btn" class="input-action-btn" title="फ़ाइल अटैच करें">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <input type="file" id="file-input" accept="image/*,video/*,application/*" class="hidden">
+                    <textarea id="message-input" placeholder="संदेश लिखें..." rows="1"></textarea>
+                    <button id="send-btn" class="input-action-btn send-button" title="भेजें">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </footer>
             </div>
+        </main>
+
+    </div>
+
+    <!-- Modals -->
+    <div id="create-chat-modal" class="modal hidden">
+        <div class="modal-content">
+            <button class="close-modal-btn" onclick="hideModal('create-chat-modal')">×</button>
+            <h3>नया चैनल/ग्रुप बनाएं</h3>
+            <form id="create-chat-form">
+                <div class="form-group profile-pic-upload">
+                    <label>प्रोफ़ाइल पिक्चर (वैकल्पिक):</label>
+                    <img id="create-chat-pic-preview" src="images/placeholder-profile.png" alt="प्रीव्यू">
+                    <input type="file" id="create-chat-pic-input" accept="image/*">
+                    <button type="button" onclick="document.getElementById('create-chat-pic-input').click()">अपलोड करें</button>
+                </div>
+                <div class="form-group">
+                    <label>टाइप:</label>
+                    <input type="radio" id="type-channel" name="chat_type" value="channel" checked> <label for="type-channel">चैनल</label>
+                    <input type="radio" id="type-group" name="chat_type" value="group"> <label for="type-group">ग्रुप</label>
+                </div>
+                <div class="form-group">
+                    <label for="chat-name">नाम:</label>
+                    <input type="text" id="chat-name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="chat-description">विवरण (वैकल्पिक):</label>
+                    <textarea id="chat-description" name="description"></textarea>
+                </div>
+                 <p id="create-chat-error" class="error-message hidden"></p>
+                <button type="submit" id="create-chat-submit-btn">बनाएं</button>
+            </form>
         </div>
     </div>
 
-     <!-- Simple Log Overlay -->
-    <div id="log-overlay" class="log-overlay">
-        <h3>Post Log <button id="close-log-btn">X</button></h3>
-        <div id="log-content">
-            <!-- Log entries will be added here -->
-        </div>
-    </div>
-    <button id="show-log-btn" title="Show Post Log"><i class="fas fa-history"></i></button>
-
+    <!-- Placeholder Modals for Future Features -->
+    <!-- <div id="dashboard-modal" class="modal hidden">... Dashboard Content ...</div> -->
+    <!-- <div id="settings-modal" class="modal hidden">... Settings Content ...</div> -->
 
     <script src="script.js"></script>
 </body>
-</html>
+    </html>
