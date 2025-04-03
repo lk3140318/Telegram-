@@ -1,414 +1,303 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const downloadForm = document.getElementById('download-form');
+    const videoUrlInput = document.getElementById('video-url');
+    const resultsSection = document.getElementById('results-section');
+    const loadingIndicator = document.getElementById('loading');
+    const errorMessageDiv = document.getElementById('error-message');
+    const downloadOptionsDiv = document.getElementById('download-options');
+    const platformListDiv = document.getElementById('platform-list');
+    const yearSpan = document.getElementById('year');
 
-    // --- स्टेट वेरिएबल्स (State Variables) ---
-    let currentChatId = null;
-    let currentChatName = null;
-    let currentChatType = null;
-    let chats = []; // स्टोर करेगा { id, name, type, profilePic, lastMessagePreview, lastUpdateTime }
-    let messages = {}; // ऑब्जेक्ट चैट आईडी द्वारा संदेशों को स्टोर करने के लिए { chatId: [messages] }
-    let selectedFile = null; // अपलोड के लिए चयनित फ़ाइल
-    let currentTheme = localStorage.getItem('theme') || 'light-mode';
+    // --- Configuration ---
+    // ** IMPORTANT: Replace this with the actual URL of your backend API endpoint **
+    // This backend service will take the video URL and return download links.
+    const BACKEND_API_URL = 'YOUR_BACKEND_API_ENDPOINT_HERE'; // e.g., 'https://your-api.com/download'
 
-    // --- DOM एलिमेंट्स ---
-    const chatListElement = document.getElementById('chat-list');
-    const messageListElement = document.getElementById('message-list');
-    const chatHeaderName = document.getElementById('chat-header-name');
-    const chatHeaderStatus = document.getElementById('chat-header-status');
-    const chatHeaderPic = document.getElementById('chat-header-pic');
-    const messageInput = document.getElementById('message-input');
-    const sendBtn = document.getElementById('send-btn');
-    const attachBtn = document.getElementById('attach-btn');
-    const fileInput = document.getElementById('file-input');
-    const imagePreviewArea = document.getElementById('image-preview-area');
-    const imagePreview = document.getElementById('image-preview');
-    const removeImageBtn = document.getElementById('remove-image-btn');
-    const newChatBtn = document.getElementById('new-chat-btn');
-    const createChatModal = document.getElementById('create-chat-modal');
-    const createChatForm = document.getElementById('create-chat-form');
-    const createChatPicInput = document.getElementById('create-chat-pic-input');
-    const createChatPicPreview = document.getElementById('create-chat-pic-preview');
-    const defaultView = document.getElementById('default-view');
-    const chatView = document.getElementById('chat-view');
-    const themeToggleBtn = document.getElementById('theme-toggle-btn');
-    const chatSearchBtn = document.getElementById('chat-search-btn');
-    const chatSearchBar = document.querySelector('.chat-search-bar');
-    const closeChatSearchBtn = document.getElementById('close-chat-search-btn');
-    const pinnedMessagePlaceholder = document.getElementById('pinned-message-placeholder'); // पिन संदेश के लिए
+    // List of supported platforms (URLs are just for display/info, backend handles logic)
+    // Easily update this list by adding/removing entries.
+    const supportedPlatforms = [
+        { name: 'YouTube', url: 'https://www.youtube.com/' },
+        { name: 'Facebook', url: 'https://www.facebook.com/' },
+        { name: 'Instagram', url: 'https://www.instagram.com/' },
+        { name: 'Twitter / X', url: 'https://x.com/' },
+        { name: 'TikTok', url: 'https://www.tiktok.com/' },
+        { name: 'Vimeo', url: 'https://vimeo.com/' },
+        // Add more platforms here
+        // { name: 'PlatformName', url: 'https://platform.com/' },
+    ];
+    // --- End Configuration ---
 
-    // --- हेल्पर फंक्शन्स ---
-    const showModal = (modalId) => document.getElementById(modalId).classList.remove('hidden');
-    const hideModal = (modalId) => document.getElementById(modalId).classList.add('hidden');
-    const formatTimestamp = (timestamp) => new Date(timestamp).toLocaleTimeString('hi-IN', { hour: 'numeric', minute: '2-digit' });
-
-    // --- थीम मैनेजमेंट ---
-    function applyTheme(theme) {
-        document.body.className = theme;
-        localStorage.setItem('theme', theme);
-        themeToggleBtn.innerHTML = theme === 'dark-mode' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-        currentTheme = theme;
-    }
-
-    themeToggleBtn.addEventListener('click', () => {
-        applyTheme(currentTheme === 'light-mode' ? 'dark-mode' : 'light-mode');
-    });
-
-    // --- चैट फंक्शन्स ---
-    async function loadChats() {
-        chatListElement.innerHTML = '<li class="loading-placeholder">चैट्स लोड हो रहे हैं...</li>';
-        // --- BACKEND INTEGRATION ---
-        // यहाँ से वास्तविक चैट लिस्ट बैकएंड (Firebase/Supabase) से fetch करें
-        // उदा. const fetchedChats = await fetch('/api/chats').then(res => res.json());
-        // chats = fetchedChats;
-
-        // --- सिमुलेशन ---
-        await new Promise(resolve => setTimeout(resolve, 700)); // नेटवर्क डिले सिमुलेशन
-        chats = [
-            { id: 'channel_1', name: 'मेरा खास चैनल', type: 'channel', profilePic: 'images/channel-icon.png', lastMessagePreview: 'नया अपडेट देखें!', lastUpdateTime: Date.now() - 60000 },
-            { id: 'group_1', name: 'डेवलपमेंट टीम ग्रुप', type: 'group', profilePic: 'images/group-icon.png', lastMessagePreview: 'एडमिन: मीटिंग का समय?', lastUpdateTime: Date.now() - 3600000 },
-            { id: 'channel_2', name: 'Getup Pages Announcements', type: 'channel', profilePic: 'images/getup-logo.png', lastMessagePreview: 'v1.1 जारी किया गया', lastUpdateTime: Date.now() - 86400000 },
-        ];
-        messages['channel_1'] = [ // डेमो संदेश
-            { id: 'm1', sender: 'admin', type: 'text', content: 'चैनल में स्वागत है!', timestamp: Date.now() - 120000 },
-            { id: 'm2', sender: 'admin', type: 'image', content: 'images/sample-image.jpg', caption: 'यह एक सैंपल इमेज है। #getup', timestamp: Date.now() - 65000 }
-        ];
-         messages['group_1'] = [
-            { id: 'g1', sender: 'other_user', type: 'text', content: 'क्या हम कल मीटिंग कर सकते हैं?', timestamp: Date.now() - 4000000 },
-             { id: 'g2', sender: 'admin', type: 'text', content: 'हाँ, सुबह 10 बजे?', timestamp: Date.now() - 3600000 }
-        ];
-        // --- सिमुलेशन खत्म ---
-
-        sortAndRenderChats();
-    }
-
-    function sortAndRenderChats() {
-        // सबसे हालिया अपडेट के आधार पर सॉर्ट करें (बैकएंड से आने पर अधिक विश्वसनीय)
-        chats.sort((a, b) => (b.lastUpdateTime || 0) - (a.lastUpdateTime || 0));
-        renderChatList();
-    }
-
-    function renderChatList() {
-        chatListElement.innerHTML = ''; // पुरानी लिस्ट साफ़ करें
-        if (chats.length === 0) {
-            chatListElement.innerHTML = '<li class="loading-placeholder">कोई चैट नहीं मिली।</li>';
-            return;
-        }
-        chats.forEach(chat => {
-            const li = document.createElement('li');
-            li.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
-            li.dataset.chatId = chat.id;
-            li.innerHTML = `
-                <img src="${chat.profilePic || 'images/placeholder-profile.png'}" alt="${chat.name.charAt(0)}" class="profile-pic">
-                <div class="chat-info">
-                    <span class="chat-name">${chat.name}</span>
-                    <span class="last-message-preview">${chat.lastMessagePreview || '...'}</span>
-                </div>
-                <span class="last-message-time">${chat.lastUpdateTime ? formatTimestamp(chat.lastUpdateTime) : ''}</span>
-            `;
-            li.addEventListener('click', () => selectChat(chat.id));
-            chatListElement.appendChild(li);
+    // --- Initialize ---
+    // Display Supported Platforms
+    function displayPlatforms() {
+        platformListDiv.innerHTML = ''; // Clear existing
+        supportedPlatforms.forEach(platform => {
+            // You could use logos here instead of just text
+            const platformElement = document.createElement('span');
+            platformElement.classList.add('platform-item');
+            platformElement.textContent = platform.name;
+            // Optional: Link to the platform's homepage (opens in new tab)
+            // const platformLink = document.createElement('a');
+            // platformLink.href = platform.url;
+            // platformLink.target = '_blank';
+            // platformLink.rel = 'noopener noreferrer';
+            // platformLink.classList.add('platform-item');
+            // platformLink.textContent = platform.name;
+            // platformListDiv.appendChild(platformLink);
+             platformListDiv.appendChild(platformElement);
         });
     }
 
-    function selectChat(chatId) {
-        const selectedChat = chats.find(c => c.id === chatId);
-        if (!selectedChat) return;
-
-        currentChatId = chatId;
-        currentChatName = selectedChat.name;
-        currentChatType = selectedChat.type;
-
-        // पुराने एक्टिव को हटाएं, नए को एक्टिव करें
-        document.querySelectorAll('.chat-item.active').forEach(el => el.classList.remove('active'));
-        chatListElement.querySelector(`.chat-item[data-chat-id="${chatId}"]`)?.classList.add('active');
-
-        // हेडर अपडेट करें
-        chatHeaderName.textContent = selectedChat.name;
-        chatHeaderStatus.textContent = selectedChat.type === 'channel' ? 'चैनल' : 'ग्रुप';
-        chatHeaderPic.src = selectedChat.profilePic || 'images/placeholder-profile.png';
-
-        // व्यू बदलें
-        defaultView.classList.add('hidden');
-        chatView.classList.remove('hidden');
-        chatSearchBar.classList.add('hidden'); // चैट बदलते समय सर्च बार बंद करें
-
-        // संदेश लोड/रेंडर करें
-        renderMessages(chatId);
-
-        // इनपुट एरिया सक्षम करें
-        messageInput.disabled = false;
-        sendBtn.disabled = false;
-        attachBtn.disabled = false;
+    // Set current year in footer
+    function setFooterYear() {
+        yearSpan.textContent = new Date().getFullYear();
     }
 
-    // --- संदेश फंक्शन्स ---
-    function renderMessages(chatId) {
-        messageListElement.innerHTML = ''; // पुराने संदेश हटाएं
-        const chatMessages = messages[chatId] || [];
+    displayPlatforms();
+    setFooterYear();
+    // --- End Initialize ---
 
-        if (chatMessages.length === 0) {
-            messageListElement.innerHTML = '<li class="loading-placeholder">इस चैट में कोई संदेश नहीं है।</li>';
-        } else {
-            // पिन किए गए संदेश का सिमुलेशन (वास्तविक के लिए बैकएंड से डेटा चाहिए)
-            if (chatId === 'channel_1') { // उदा. के लिए
-                 pinnedMessagePlaceholder.classList.remove('hidden');
-                 pinnedMessagePlaceholder.querySelector('span').textContent = "महत्वपूर्ण घोषणा: नया अपडेट जल्द आ रहा है!";
-            } else {
-                 pinnedMessagePlaceholder.classList.add('hidden');
-            }
 
-            chatMessages.slice().reverse().forEach(msg => { // नवीनतम नीचे दिखाने के लिए रिवर्स करें
-                const li = document.createElement('li');
-                // वर्तमान में केवल एडमिन भेज रहा है, तो सभी 'sent' हैं
-                const isSent = true; // msg.sender === 'admin'; // भविष्य के लिए
-                li.className = `message-item ${isSent ? 'sent' : 'received'}`;
+    // --- Event Listeners ---
+    downloadForm.addEventListener('submit', async (event) => {
+        event.preventDefault(); // Prevent default form submission
+        const videoUrl = videoUrlInput.value.trim();
 
-                let contentHTML = '';
-                switch (msg.type) {
-                    case 'text':
-                        contentHTML = `<div class="text">${linkify(msg.content)}</div>`;
-                        break;
-                    case 'image':
-                        contentHTML = `<img src="${msg.content}" alt="छवि" class="image">`;
-                        if (msg.caption) {
-                            contentHTML += `<div class="message-caption">${linkify(msg.caption)}</div>`;
-                        }
-                        break;
-                    case 'video': // Placeholder
-                        contentHTML = `<div class="video"><i class="fas fa-video"></i><span>वीडियो फ़ाइल (Placeholder)</span></div>`;
-                         if (msg.caption) {
-                             contentHTML += `<div class="message-caption">${linkify(msg.caption)}</div>`;
-                         }
-                        break;
-                    case 'document': // Placeholder
-                        contentHTML = `<div class="document"><i class="fas fa-file-alt"></i><span>डॉक्यूमेंट (Placeholder)</span></div>`;
-                         if (msg.caption) {
-                             contentHTML += `<div class="message-caption">${linkify(msg.caption)}</div>`;
-                         }
-                        break;
-                    default:
-                        contentHTML = `<div class="text">[असमर्थित संदेश प्रकार]</div>`;
-                }
-
-                li.innerHTML = `
-                    <div class="message-bubble">
-                        <div class="message-content">${contentHTML}</div>
-                        <div class="message-timestamp">${formatTimestamp(msg.timestamp)}</div>
-                    </div>
-                `;
-                messageListElement.appendChild(li);
-            });
-        }
-        // स्क्रॉल को नीचे रखें (जो दिखने में ऊपर है flex-direction: column-reverse के कारण)
-        messageListElement.scrollTop = messageListElement.scrollHeight;
-    }
-
-    function handleSendMessage() {
-        const text = messageInput.value.trim();
-        if (!text && !selectedFile) return; // भेजने के लिए कुछ नहीं है
-        if (!currentChatId) return;
-
-        const timestamp = Date.now();
-        let newMessage = {
-            id: 'temp_' + timestamp, // अस्थायी आईडी
-            sender: 'admin', // वर्तमान में केवल एडमिन
-            timestamp: timestamp,
-        };
-
-        // --- BACKEND INTEGRATION ---
-        // यहाँ वास्तविक संदेश/फ़ाइल बैकएंड पर भेजें
-        // अगर फ़ाइल है, तो पहले उसे अपलोड करें (Firebase Storage/Supabase Storage)
-        // फिर संदेश डेटा (टेक्स्ट/कैप्शन, फ़ाइल URL, चैट आईडी) को डेटाबेस में सेव करें
-
-        if (selectedFile) {
-            // सिमुलेशन: मान लें फ़ाइल अपलोड हो गई और URL मिला
-            const simulatedFileUrl = URL.createObjectURL(selectedFile); // केवल लोकल प्रीव्यू के लिए
-            newMessage.type = selectedFile.type.startsWith('image/') ? 'image' : (selectedFile.type.startsWith('video/') ? 'video' : 'document');
-            newMessage.content = simulatedFileUrl; // बैकएंड से वास्तविक URL का उपयोग करें
-            newMessage.caption = text; // टेक्स्ट कैप्शन बन जाता है
-
-            console.log(`सिमुलेटिंग फ़ाइल (${selectedFile.name}) पोस्ट कैप्शन के साथ: ${text}`);
-            // BACKEND: await uploadFileAndPost(currentChatId, selectedFile, text);
-        } else {
-            newMessage.type = 'text';
-            newMessage.content = text;
-            console.log(`सिमुलेटिंग टेक्स्ट पोस्ट: ${text}`);
-            // BACKEND: await postTextMessage(currentChatId, text);
-        }
-
-        // --- सिमुलेशन: UI अपडेट ---
-        if (!messages[currentChatId]) {
-            messages[currentChatId] = [];
-        }
-        messages[currentChatId].push(newMessage); // संदेश को लोकल स्टेट में जोड़ें
-
-        renderMessages(currentChatId); // संदेश लिस्ट री-रेंडर करें
-
-        // चैट लिस्ट में प्रीव्यू अपडेट करें
-        const chatIndex = chats.findIndex(c => c.id === currentChatId);
-        if (chatIndex > -1) {
-            let preview = '';
-            if (newMessage.type === 'image') preview = '📷 फोटो' + (newMessage.caption ? `: ${newMessage.caption}` : '');
-            else if (newMessage.type === 'video') preview = '🎥 वीडियो' + (newMessage.caption ? `: ${newMessage.caption}` : '');
-            else if (newMessage.type === 'document') preview = '📄 डॉक्यूमेंट' + (newMessage.caption ? `: ${newMessage.caption}` : '');
-            else preview = newMessage.content;
-
-            chats[chatIndex].lastMessagePreview = preview.substring(0, 35) + (preview.length > 35 ? '...' : '');
-            chats[chatIndex].lastUpdateTime = timestamp;
-            sortAndRenderChats(); // लिस्ट को री-सॉर्ट और री-रेंडर करें
-        }
-
-        // इनपुट एरिया रीसेट करें
-        messageInput.value = '';
-        messageInput.style.height = 'auto'; // ऊंचाई रीसेट करें
-        selectedFile = null;
-        fileInput.value = null; // फ़ाइल इनपुट साफ़ करें
-        imagePreviewArea.classList.add('hidden');
-        // --- सिमुलेशन खत्म ---
-    }
-
-    // टेक्स्ट में लिंक बनाने के लिए हेल्पर
-    function linkify(text) {
-        const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-        return text.replace(urlRegex, url => `<a href="${url}" target="_blank" style="color: var(--link-color);">${url}</a>`);
-    }
-
-    // --- फ़ाइल अटैचमेंट ---
-    attachBtn.addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            selectedFile = file;
-            // केवल इमेज के लिए प्रीव्यू दिखाएं
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    imagePreview.src = event.target.result;
-                    imagePreviewArea.classList.remove('hidden');
-                }
-                reader.readAsDataURL(file);
-            } else {
-                // अन्य फ़ाइल प्रकारों के लिए, आप फ़ाइल नाम दिखा सकते हैं
-                imagePreviewArea.classList.add('hidden'); // या एक अलग प्रीव्यू दिखाएं
-                messageInput.value = `फ़ाइल संलग्न: ${file.name}`; // उदाहरण
-            }
-        }
-    });
-
-    removeImageBtn.addEventListener('click', () => {
-        selectedFile = null;
-        fileInput.value = null;
-        imagePreviewArea.classList.add('hidden');
-        imagePreview.src = '#';
-    });
-
-    // --- नया चैट क्रिएशन ---
-    newChatBtn.addEventListener('click', () => {
-        createChatForm.reset(); // फॉर्म रीसेट करें
-        createChatPicPreview.src = 'images/placeholder-profile.png'; // डिफ़ॉल्ट प्रीव्यू
-        document.getElementById('create-chat-error').classList.add('hidden'); // एरर छिपाएं
-        showModal('create-chat-modal');
-    });
-
-    createChatPicInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                createChatPicPreview.src = event.target.result;
-            }
-            reader.readAsDataURL(file);
-        }
-    });
-
-    createChatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const nameInput = document.getElementById('chat-name');
-        const typeInput = document.querySelector('input[name="chat_type"]:checked');
-        const descriptionInput = document.getElementById('chat-description');
-        const errorElement = document.getElementById('create-chat-error');
-        const submitBtn = document.getElementById('create-chat-submit-btn');
-
-        if (!nameInput.value.trim()) {
-            errorElement.textContent = 'कृपया नाम दर्ज करें।';
-            errorElement.classList.remove('hidden');
+        // Basic URL validation
+        if (!isValidUrl(videoUrl)) {
+            showError('Please enter a valid video URL.');
             return;
         }
-        errorElement.classList.add('hidden');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'बनाया जा रहा है...';
 
-        const chatData = {
-            name: nameInput.value.trim(),
-            type: typeInput.value,
-            description: descriptionInput.value.trim()
-        };
-        const profilePicFile = createChatPicInput.files[0];
+        // Clear previous results and errors
+        clearResults();
+        showLoading(true);
 
-        // --- BACKEND INTEGRATION ---
-        // 1. अगर profilePicFile है, तो इसे बैकएंड स्टोरेज पर अपलोड करें और URL प्राप्त करें।
-        // 2. chatData और प्रोफाइल पिक्चर URL को बैकएंड API पर भेजें ताकि चैट बनाया जा सके।
-        // उदा. const result = await fetch('/api/create_chat', { method: 'POST', body: JSON.stringify(chatData), headers: {...} });
-        // const newChat = await result.json();
+        // ** !!! THIS IS WHERE THE BACKEND CALL HAPPENS !!! **
+        try {
+            // Replace the mock function with a real fetch call to your backend
+            // const downloadData = await fetchDownloadLinksFromBackend(videoUrl);
 
-        // --- सिमुलेशन ---
-        await new Promise(resolve => setTimeout(resolve, 1000)); // डिले सिमुलेशन
-        const newChat = {
-            id: 'new_' + Date.now(),
-            name: chatData.name,
-            type: chatData.type,
-            profilePic: profilePicFile ? URL.createObjectURL(profilePicFile) : (chatData.type === 'group' ? 'images/group-icon.png' : 'images/channel-icon.png'), // लोकल प्रीव्यू
-            lastMessagePreview: 'चैट बनाया गया!',
-            lastUpdateTime: Date.now()
-        };
-        console.log("सिमुलेटेड नया चैट:", newChat);
-        chats.unshift(newChat); // लिस्ट में सबसे ऊपर जोड़ें
-        messages[newChat.id] = []; // नए चैट के लिए संदेश ऐरे इनिशियलाइज़ करें
-        sortAndRenderChats();
-        hideModal('create-chat-modal');
-        selectChat(newChat.id); // नए चैट को चुनें
-        // --- सिमुलेशन खत्म ---
+            // ** Mock Implementation (Remove this when using a real backend) **
+            const downloadData = await mockFetchDownloadLinks(videoUrl);
+            // ** End Mock Implementation **
 
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'बनाएं';
+
+            if (downloadData && downloadData.success && downloadData.links.length > 0) {
+                displayDownloadOptions(downloadData.links, downloadData.title || 'Video');
+            } else {
+                showError(downloadData.message || 'Could not fetch download links. The platform might be unsupported or the link invalid.');
+            }
+        } catch (error) {
+            console.error('Error fetching download links:', error);
+            showError('An unexpected error occurred. Please try again later.');
+        } finally {
+            showLoading(false);
+        }
     });
-
-    // --- इन-चैट सर्च ---
-    chatSearchBtn.addEventListener('click', () => {
-        chatSearchBar.classList.remove('hidden');
-        document.getElementById('in-chat-search-input').focus();
-    });
-    closeChatSearchBtn.addEventListener('click', () => {
-        chatSearchBar.classList.add('hidden');
-        // यहाँ सर्च रिजल्ट्स को साफ़ करने का लॉजिक भी जोड़ें
-    });
-     // इन-चैट सर्च इनपुट पर टाइपिंग को हैंडल करने के लिए इवेंट लिसनर जोड़ें (बैकएंड इंटीग्रेशन की आवश्यकता होगी)
+    // --- End Event Listeners ---
 
 
-    // --- इनपुट ऑटो-रीसाइज़ ---
-    messageInput.addEventListener('input', () => {
-        messageInput.style.height = 'auto'; // ऊंचाई रीसेट करें
-        messageInput.style.height = `${messageInput.scrollHeight}px`; // स्क्रॉल ऊंचाई पर सेट करें
-    });
+    // --- Core Functions ---
 
-     // Enter से भेजें (Shift+Enter नई लाइन के लिए)
-     messageInput.addEventListener('keydown', (e) => {
-         if (e.key === 'Enter' && !e.shiftKey) {
-             e.preventDefault(); // नई लाइन न डालें
-             handleSendMessage();
-         }
-     });
+    // ** !!! REPLACE THIS WITH YOUR ACTUAL BACKEND API CALL !!! **
+    async function fetchDownloadLinksFromBackend(url) {
+        // This function needs to make a POST request (usually) to your backend
+        // Send the video URL in the request body
+        // Handle the response (which should contain download links or an error message)
 
-    // --- इनिशियलाइज़ेशन ---
-    function init() {
-        console.log("गेटअप पेजेस एडमिन पैनल इनिशियलाइज़ हो रहा है...");
-        applyTheme(currentTheme); // संग्रहीत थीम लागू करें
-        loadChats(); // चैट लोड करें
-        // डिफ़ॉल्ट रूप से इनपुट अक्षम करें
-        messageInput.disabled = true;
-        sendBtn.disabled = true;
-        attachBtn.disabled = true;
+        if (BACKEND_API_URL === 'YOUR_BACKEND_API_ENDPOINT_HERE') {
+             console.warn("Backend API URL is not set. Using mock data.");
+             return mockFetchDownloadLinks(url); // Fallback to mock if no URL set
+        }
+
+        try {
+            const response = await fetch(BACKEND_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Add any other required headers (like API keys if needed)
+                },
+                body: JSON.stringify({ videoUrl: url }) // Send URL in body
+            });
+
+            if (!response.ok) {
+                // Try to get error message from backend response body
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    // If response is not JSON or empty
+                    errorData = { message: `Error: ${response.status} ${response.statusText}` };
+                }
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data; // Expecting format like { success: true, title: "Video Title", links: [{ quality: '720p', url: '...' }, ...] } or { success: false, message: 'Error details' }
+
+        } catch (error) {
+            console.error("Backend fetch error:", error);
+            return { success: false, message: error.message || 'Failed to connect to the download service.' };
+        }
+    }
+    // ** !!! END OF BACKEND API CALL FUNCTION !!! **
+
+
+    // ** Mock Function (REMOVE WHEN USING REAL BACKEND) **
+    // Simulates fetching links after a short delay
+    function mockFetchDownloadLinks(url) {
+        console.log(`Mock fetching for URL: ${url}`);
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                // Simulate success or failure based on URL (very basic)
+                if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                    resolve({
+                        success: true,
+                        title: "Example YouTube Video Title",
+                        links: [
+                            { quality: '1080p', url: '#download-link-1080p', type: 'MP4', size: '50 MB' },
+                            { quality: '720p', url: '#download-link-720p', type: 'MP4', size: '30 MB' },
+                            { quality: '480p', url: '#download-link-480p', type: 'MP4', size: '15 MB' },
+                            { quality: 'Audio', url: '#download-link-audio', type: 'MP3', size: '5 MB' },
+                        ]
+                    });
+                } else if (url.includes('tiktok.com')) {
+                     resolve({
+                        success: true,
+                        title: "Example TikTok Video",
+                        links: [
+                            { quality: 'HD', url: '#download-link-tiktok-hd', type: 'MP4', size: '10 MB' },
+                            { quality: 'Watermarked', url: '#download-link-tiktok-wm', type: 'MP4', size: '10 MB' },
+                        ]
+                    });
+                } else if (url.includes('facebook.com') || url.includes('fb.watch')) {
+                     resolve({
+                        success: true,
+                        title: "Example Facebook Video",
+                        links: [
+                            { quality: 'HD', url: '#download-link-fb-hd', type: 'MP4', size: '25 MB' },
+                            { quality: 'SD', url: '#download-link-fb-sd', type: 'MP4', size: '12 MB' },
+                        ]
+                    });
+                 } else if (url.includes('invalid-link')) {
+                     resolve({ success: false, message: 'The provided link is invalid or cannot be processed (Mock Error).' });
+                 }
+                 else {
+                    // Generic success for other URLs in mock mode
+                     resolve({
+                        success: true,
+                        title: "Example Social Media Video",
+                        links: [
+                            { quality: '720p', url: '#download-link-generic-720p', type: 'MP4', size: '20 MB' },
+                            { quality: '480p', url: '#download-link-generic-480p', type: 'MP4', size: '10 MB' },
+                        ]
+                    });
+                }
+            }, 1500); // Simulate network delay
+        });
+    }
+    // ** End Mock Function **
+
+
+    function displayDownloadOptions(links, title) {
+        clearResults(); // Clear previous results/errors
+
+        // Optional: Display Video Title
+        // const titleElement = document.createElement('h3');
+        // titleElement.textContent = `Title: ${title}`;
+        // titleElement.style.marginBottom = '1rem';
+        // downloadOptionsDiv.appendChild(titleElement);
+
+        links.forEach(link => {
+            const itemDiv = document.createElement('div');
+            itemDiv.classList.add('download-item');
+
+            const qualitySpan = document.createElement('span');
+            qualitySpan.textContent = `${link.quality} ${link.type ? '(' + link.type + ')' : ''} ${link.size ? '[' + link.size + ']' : ''}`;
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.classList.add('actions');
+
+            // Download Button (as a link)
+            const downloadBtn = document.createElement('a'); // Use <a> for direct download
+            downloadBtn.href = link.url;
+            downloadBtn.textContent = 'Download';
+            downloadBtn.classList.add('download-btn');
+            downloadBtn.setAttribute('download', ''); // Suggests browser should download the linked file
+            downloadBtn.setAttribute('target', '_blank'); // Open in new tab/initiate download without leaving page
+            downloadBtn.setAttribute('rel', 'noopener noreferrer');
+
+
+            // Copy Link Button
+            const copyBtn = document.createElement('button');
+            copyBtn.textContent = 'Copy Link';
+            copyBtn.classList.add('copy-btn');
+            copyBtn.addEventListener('click', () => copyToClipboard(link.url, copyBtn));
+
+            actionsDiv.appendChild(downloadBtn);
+            actionsDiv.appendChild(copyBtn);
+
+            itemDiv.appendChild(qualitySpan);
+            itemDiv.appendChild(actionsDiv);
+
+            downloadOptionsDiv.appendChild(itemDiv);
+        });
+         resultsSection.style.display = 'block'; // Ensure section is visible
     }
 
-    init();
+    function copyToClipboard(text, buttonElement) {
+        navigator.clipboard.writeText(text).then(() => {
+            // Success feedback
+            const originalText = buttonElement.textContent;
+            buttonElement.textContent = 'Copied!';
+            buttonElement.classList.add('copied');
+            buttonElement.disabled = true; // Disable briefly
+
+            setTimeout(() => {
+                buttonElement.textContent = originalText;
+                buttonElement.classList.remove('copied');
+                buttonElement.disabled = false;
+            }, 2000); // Revert after 2 seconds
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            // Optional: Show error feedback to user
+            alert("Failed to copy link. Your browser might not support this feature or permissions are denied.");
+        });
+    }
+
+    function showLoading(isLoading) {
+        if (isLoading) {
+            clearResults(); // Clear anything else before showing loading
+            loadingIndicator.style.display = 'flex';
+            resultsSection.style.display = 'block'; // Ensure section is visible
+        } else {
+            loadingIndicator.style.display = 'none';
+        }
+    }
+
+    function showError(message) {
+        clearResults(); // Clear other results/loading
+        errorMessageDiv.textContent = message;
+        errorMessageDiv.style.display = 'block';
+        resultsSection.style.display = 'block'; // Ensure section is visible
+    }
+
+    function clearResults() {
+        loadingIndicator.style.display = 'none';
+        errorMessageDiv.style.display = 'none';
+        errorMessageDiv.textContent = '';
+        downloadOptionsDiv.innerHTML = ''; // Clear previous download links
+        // Don't hide resultsSection immediately, let new content replace old
+    }
+
+    function isValidUrl(string) {
+        try {
+            new URL(string);
+            // Basic check for common domain patterns (optional but helpful)
+            return string.includes('.') && (string.startsWith('http://') || string.startsWith('https://'));
+        } catch (_) {
+            return false;
+        }
+    }
 });
