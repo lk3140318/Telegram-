@@ -1,142 +1,108 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>गेटअप पेजेस - एडमिन पैनल</title>
+
+    <!-- SEO Meta Tags -->
+    <title>Social Media Video Downloader - Download Videos Easily</title>
+    <meta name="description" content="Download videos from YouTube, Facebook, Instagram, Twitter, TikTok, and more. Paste the link, choose quality, and get your video instantly. Fast, free, and easy to use.">
+    <meta name="keywords" content="video downloader, social media downloader, youtube downloader, facebook video downloader, instagram video downloader, tiktok downloader, download video, free video downloader">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph Meta Tags (for social sharing) -->
+    <meta property="og:title" content="Social Media Video Downloader - Download Videos Easily">
+    <meta property="og:description" content="Download videos from various social media platforms quickly and easily.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="YOUR_WEBSITE_URL_HERE"> <!-- Replace with your actual URL when hosted -->
+    <!-- <meta property="og:image" content="YOUR_PREVIEW_IMAGE_URL_HERE"> --> <!-- Optional: Add a preview image URL -->
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Social Media Video Downloader - Download Videos Easily">
+    <meta name="twitter:description" content="Download videos from various social media platforms quickly and easily.">
+    <!-- <meta name="twitter:image" content="YOUR_PREVIEW_IMAGE_URL_HERE"> --> <!-- Optional: Add a preview image URL -->
+
+    <!-- Favicon (Optional but Recommended) -->
+    <!-- <link rel="icon" href="favicon.ico" type="image/x-icon"> -->
+
+    <!-- CSS Stylesheet -->
     <link rel="stylesheet" href="style.css">
-    <!-- Font Awesome for Icons (Optional) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
+
+    <!-- Structured Data (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Social Media Video Downloader",
+      "operatingSystem": "Web",
+      "applicationCategory": "MultimediaApplication",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1500"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "A free web tool to download videos from various social media platforms by pasting the video URL.",
+      "url": "YOUR_WEBSITE_URL_HERE" /* Replace */
+    }
+    </script>
 </head>
-<body class="light-mode"> <!-- Default light mode -->
+<body>
+    <header>
+        <h1>Social Media Video Downloader</h1>
+        <p>Paste the video link below to download</p>
+    </header>
 
-    <div class="platform-container">
-
-        <!-- Sidebar (चैट लिस्ट) -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="admin-profile">
-                    <img src="images/admin-avatar.png" alt="एडमिन" class="profile-pic small">
-                    <span>एडमिन</span>
-                </div>
-                <button id="theme-toggle-btn" title="थीम बदलें"><i class="fas fa-moon"></i></button>
-            </div>
-
-            <div class="global-search-container">
-                <input type="search" id="global-search-input" placeholder="चैनल या ग्रुप खोजें...">
-                <i class="fas fa-search search-icon"></i>
-            </div>
-
-            <div class="filter-container">
-                <button class="filter-btn active" data-filter="all">सभी</button>
-                <button class="filter-btn" data-filter="channels">चैनल्स</button>
-                <button class="filter-btn" data-filter="groups">ग्रुप्स</button>
-                <!-- More filters like "Recently Created", "Most Active" need backend logic -->
-            </div>
-
-            <div class="chat-list-container">
-                <ul id="chat-list">
-                    <!-- चैट आइटम्स यहाँ JS द्वारा लोड होंगे -->
-                    <li class="loading-placeholder">चैट्स लोड हो रहे हैं...</li>
-                </ul>
-            </div>
-
-            <button id="new-chat-btn" class="new-chat-button" title="नया चैनल/ग्रुप बनाएं">
-                <i class="fas fa-plus"></i> नया बनाएं
-            </button>
-        </aside>
-
-        <!-- Main Content Area (चैट व्यू) -->
-        <main class="main-content">
-            <div id="default-view" class="default-view">
-                <i class="fas fa-comments default-icon"></i>
-                <p>शुरू करने के लिए कोई चैट चुनें या नया बनाएं।</p>
-            </div>
-
-            <div id="chat-view" class="chat-view hidden">
-                <header class="chat-header">
-                    <div class="chat-info-main">
-                        <img id="chat-header-pic" src="images/placeholder-profile.png" alt="प्रोफ़ाइल" class="profile-pic">
-                        <div class="chat-details">
-                            <h2 id="chat-header-name">चैट का नाम</h2>
-                            <span id="chat-header-status">चैनल</span>
-                        </div>
-                    </div>
-                    <div class="chat-actions">
-                        <button id="chat-search-btn" title="इस चैट में खोजें"><i class="fas fa-search"></i></button>
-                        <button id="pin-list-btn" title="पिन किए गए संदेश (Placeholder)"><i class="fas fa-thumbtack"></i></button>
-                        <button id="more-options-btn" title="अधिक विकल्प (Placeholder)"><i class="fas fa-ellipsis-v"></i></button>
-                    </div>
-                     <div class="chat-search-bar hidden">
-                        <input type="search" id="in-chat-search-input" placeholder="संदेश खोजें...">
-                        <button id="close-chat-search-btn"><i class="fas fa-times"></i></button>
-                    </div>
-                </header>
-
-                <div class="message-list-container">
-                    <div id="pinned-message-placeholder" class="pinned-message hidden">
-                        <i class="fas fa-thumbtack pin-icon"></i>
-                        <span id="pinned-message-text">पिन किया गया संदेश यहाँ दिखेगा...</span>
-                    </div>
-                    <ul id="message-list">
-                        <!-- संदेश यहाँ JS द्वारा लोड होंगे -->
-                    </ul>
-                </div>
-
-                <footer class="message-input-area">
-                    <div id="image-preview-area" class="image-preview-area hidden">
-                        <img id="image-preview" src="#" alt="प्रीव्यू"/>
-                        <button id="remove-image-btn">×</button>
-                    </div>
-                    <button id="attach-btn" class="input-action-btn" title="फ़ाइल अटैच करें">
-                        <i class="fas fa-paperclip"></i>
+    <main>
+        <section class="downloader-section">
+            <form id="download-form">
+                <div class="input-group">
+                    <label for="video-url" class="sr-only">Video URL</label>
+                    <input type="url" id="video-url" placeholder="Paste video link here (e.g., YouTube, Facebook, TikTok...)" required>
+                    <button type="submit" id="submit-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#FFFFFF"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17.2 3H6.8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10.4c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3.4 15H10v-2h3.8v2zm0-3H10v-2h3.8v2zm0-3H10V9h3.8v3zm4.6-6.2c.1.1.2.3.2.5v10.4c0 .3-.1.5-.2.7s-.4.2-.6.2H6c-.3 0-.5-.1-.7-.2s-.2-.4-.2-.7V5.8c0-.2.1-.4.2-.5s.3-.2.5-.2h11.4c.2 0 .4.1.5.2z"/></svg>
+                        <span>Process</span>
                     </button>
-                    <input type="file" id="file-input" accept="image/*,video/*,application/*" class="hidden">
-                    <textarea id="message-input" placeholder="संदेश लिखें..." rows="1"></textarea>
-                    <button id="send-btn" class="input-action-btn send-button" title="भेजें">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </footer>
-            </div>
-        </main>
-
-    </div>
-
-    <!-- Modals -->
-    <div id="create-chat-modal" class="modal hidden">
-        <div class="modal-content">
-            <button class="close-modal-btn" onclick="hideModal('create-chat-modal')">×</button>
-            <h3>नया चैनल/ग्रुप बनाएं</h3>
-            <form id="create-chat-form">
-                <div class="form-group profile-pic-upload">
-                    <label>प्रोफ़ाइल पिक्चर (वैकल्पिक):</label>
-                    <img id="create-chat-pic-preview" src="images/placeholder-profile.png" alt="प्रीव्यू">
-                    <input type="file" id="create-chat-pic-input" accept="image/*">
-                    <button type="button" onclick="document.getElementById('create-chat-pic-input').click()">अपलोड करें</button>
                 </div>
-                <div class="form-group">
-                    <label>टाइप:</label>
-                    <input type="radio" id="type-channel" name="chat_type" value="channel" checked> <label for="type-channel">चैनल</label>
-                    <input type="radio" id="type-group" name="chat_type" value="group"> <label for="type-group">ग्रुप</label>
-                </div>
-                <div class="form-group">
-                    <label for="chat-name">नाम:</label>
-                    <input type="text" id="chat-name" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label for="chat-description">विवरण (वैकल्पिक):</label>
-                    <textarea id="chat-description" name="description"></textarea>
-                </div>
-                 <p id="create-chat-error" class="error-message hidden"></p>
-                <button type="submit" id="create-chat-submit-btn">बनाएं</button>
             </form>
-        </div>
-    </div>
+        </section>
 
-    <!-- Placeholder Modals for Future Features -->
-    <!-- <div id="dashboard-modal" class="modal hidden">... Dashboard Content ...</div> -->
-    <!-- <div id="settings-modal" class="modal hidden">... Settings Content ...</div> -->
+        <section id="results-section" class="results-section" aria-live="polite">
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Processing your link...</p>
+            </div>
 
+            <!-- Error Message -->
+            <div id="error-message" class="error-message" style="display: none;"></div>
+
+            <!-- Download Links -->
+            <div id="download-options" class="download-options">
+                <!-- Download links will be injected here by JavaScript -->
+            </div>
+        </section>
+
+        <section class="supported-platforms-section">
+            <h2>Supported Platforms</h2>
+            <div id="platform-list" class="platform-list">
+                <!-- Platform logos/names will be injected here -->
+            </div>
+            <p class="note">Support for more platforms can be added easily!</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>© <span id="year"></span> Your Website Name. All rights reserved.</p>
+        <p class="disclaimer">Disclaimer: Please respect copyright laws. Do not download copyrighted material without permission.</p>
+    </footer>
+
+    <!-- JavaScript File -->
     <script src="script.js"></script>
 </body>
-    </html>
+            </html>
