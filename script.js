@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Configuration ---
     // ** IMPORTANT: Replace this with the actual URL of your backend API endpoint **
     // This backend service will take the video URL and return download links.
-    const BACKEND_API_URL = 'YOUR_BACKEND_API_ENDPOINT_HERE'; // e.g., 'https://your-api.com/download'
+    const BACKEND_API_URL = 'https://telegram-n3abzy905-lk3140318s-projects.vercel.app/'; // e.g., 'https://your-api.com/download'
 
     // List of supported platforms (URLs are just for display/info, backend handles logic)
     // Easily update this list by adding/removing entries.
